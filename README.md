@@ -1,0 +1,1 @@
+# minimal-plugin-architecture-example
