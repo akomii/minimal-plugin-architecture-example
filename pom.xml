@@ -18,6 +18,7 @@
 
   <modules>
     <module>api</module>
+    <module>plugin-hello</module>
     <module>main</module>
   </modules>
 
