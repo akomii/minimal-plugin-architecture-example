@@ -11,5 +11,5 @@
   </parent>
 
   <groupId>org.example.plugin</groupId>
-  <artifactId>api</artifactId>
+  <artifactId>main</artifactId>
 </project>
