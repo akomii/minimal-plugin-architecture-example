@@ -17,7 +17,19 @@
     <dependency>
       <groupId>org.example.plugin</groupId>
       <artifactId>api</artifactId>
-      <version>1.0-SNAPSHOT</version>
+      <version>${project.parent.version}</version>
     </dependency>
   </dependencies>
+
+  <build>
+    <resources>
+      <!-- Ensure META-INF/services is packaged if you place service descriptor in src/main/resources -->
+      <resource>
+        <directory>src/main/resources</directory>
+        <includes>
+          <include>META-INF/**</include>
+        </includes>
+      </resource>
+    </resources>
+  </build>
 </project>

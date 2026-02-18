@@ -2,7 +2,13 @@ package org.example.plugin.api;
 
 public interface Plugin {
 
+  /**
+   * Unique id for the plugin
+   */
   String id();
 
-  String greet(String name);
+  /**
+   * Execute plugin action, returns a message/result
+   */
+  String execute(String input);
 }

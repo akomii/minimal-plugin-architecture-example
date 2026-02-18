@@ -15,13 +15,18 @@
 
   <dependencies>
     <dependency>
-      <groupId>org.example.plugin</groupId>
-      <artifactId>api</artifactId>
-      <version>1.0-SNAPSHOT</version>
-    </dependency>
-    <dependency>
       <groupId>org.springframework.boot</groupId>
       <artifactId>spring-boot-starter-web</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.example.plugin</groupId>
+      <artifactId>api</artifactId>
+      <version>${project.parent.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.example.plugin</groupId>
+      <artifactId>plugin-hello</artifactId>
+      <version>${project.parent.version}</version>
     </dependency>
   </dependencies>
 

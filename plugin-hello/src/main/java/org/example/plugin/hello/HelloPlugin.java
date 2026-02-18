@@ -2,7 +2,7 @@ package org.example.plugin.hello;
 
 import org.example.plugin.api.Plugin;
 
-public class GreetingsPlugin implements Plugin {
+public class HelloPlugin implements Plugin {
 
   @Override
   public String id() {
@@ -10,7 +10,7 @@ public class GreetingsPlugin implements Plugin {
   }
 
   @Override
-  public String greet(String name) {
-    return "Hello, " + name + "!";
+  public String execute(String input) {
+    return "Hello " + (input == null ? "world" : input) + "!";
   }
 }
