@@ -19,7 +19,7 @@
     <module>api</module>
     <module>plugin-hello</module>
     <module>plugin-goodbye</module>
-    <module>main</module>
+    <module>app</module>
   </modules>
 
   <dependencyManagement>

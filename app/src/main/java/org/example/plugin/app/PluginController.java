@@ -1,4 +1,4 @@
-package org.example.plugin.main;
+package org.example.plugin.app;
 
 import jakarta.annotation.PostConstruct;
 import java.io.File;

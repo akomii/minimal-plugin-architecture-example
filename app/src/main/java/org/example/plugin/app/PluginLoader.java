@@ -1,4 +1,4 @@
-package org.example.plugin.main;
+package org.example.plugin.app;
 
 import java.io.File;
 import java.net.URL;

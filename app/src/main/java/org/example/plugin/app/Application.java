@@ -1,4 +1,4 @@
-package org.example.plugin.main;
+package org.example.plugin.app;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
