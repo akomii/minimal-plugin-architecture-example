@@ -18,8 +18,8 @@
   <modules>
     <module>api</module>
     <module>plugin-hello</module>
-    <module>main</module>
     <module>plugin-goodbye</module>
+    <module>main</module>
   </modules>
 
   <dependencyManagement>
