@@ -39,7 +39,11 @@ public class PluginLoader {
   }
 
   public void loadJar(File jarFile) throws Exception {
-    URLClassLoader classLoader = new URLClassLoader(new URL[]{jarFile.toURI().toURL()}, Plugin.class.getClassLoader());
+    URLClassLoader classLoader = new URLClassLoader(
+        new URL[]{jarFile.toURI().toURL()},
+        Plugin.class.getClassLoader()
+    );
+    registerConfigurationsFromJar(jarFile, classLoader);
     ServiceLoader<Plugin> serviceLoader = ServiceLoader.load(Plugin.class, classLoader);
     for (Plugin plugin : serviceLoader) {
       PluginData data = new PluginData();
@@ -56,6 +60,42 @@ public class PluginLoader {
         Method detectMethod = AbstractHandlerMethodMapping.class.getDeclaredMethod("detectHandlerMethods", Object.class);
         detectMethod.setAccessible(true);
         detectMethod.invoke(handlerMapping, beanName);
+      }
+    }
+  }
+
+  private void registerConfigurationsFromJar(File jar, URLClassLoader cl) throws Exception {
+    try (java.util.jar.JarFile jf = new java.util.jar.JarFile(jar)) {
+      ConfigurableApplicationContext ctx = (ConfigurableApplicationContext) context;
+      DefaultListableBeanFactory bf = (DefaultListableBeanFactory) ctx.getBeanFactory();
+      var entries = jf.entries();
+      while (entries.hasMoreElements()) {
+        var e = entries.nextElement();
+        if (!e.getName().endsWith(".class")) {
+          continue;
+        }
+        if (e.getName().startsWith("org/springframework")) {
+          continue;
+        }
+        if (e.getName().startsWith("META-INF")) {
+          continue;
+        }
+        String className = e.getName()
+            .replace('/', '.')
+            .replace(".class", "");
+        Class<?> clazz;
+        try {
+          clazz = Class.forName(className, false, cl);
+        } catch (Throwable ex) {
+          continue;
+        }
+        if (clazz.isAnnotationPresent(org.springframework.context.annotation.Configuration.class)) {
+          Object instance = clazz.getDeclaredConstructor().newInstance();
+          String beanName = "pluginConfig_" + clazz.getName();
+          if (!bf.containsSingleton(beanName)) {
+            bf.registerSingleton(beanName, instance);
+          }
+        }
       }
     }
   }
@@ -78,6 +118,7 @@ public class PluginLoader {
         beanFactory.destroySingleton(beanName);
       }
       data.classLoader.close();
+      handlerMapping.afterPropertiesSet();
     }
   }
 

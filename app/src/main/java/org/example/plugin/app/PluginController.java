@@ -32,6 +32,7 @@ public class PluginController {
             loader.loadJar(file);
           } catch (Exception e) {
             System.err.println("Failed to load " + file.getName());
+            e.printStackTrace();
           }
         }
       }
@@ -40,9 +41,7 @@ public class PluginController {
 
   @GetMapping
   public List<String> list() {
-    return loader.getActive().stream()
-        .map(Plugin::id)
-        .collect(Collectors.toList());
+    return loader.getActive().stream().map(Plugin::id).collect(Collectors.toList());
   }
 
   @PostMapping("/{id}/disable")
