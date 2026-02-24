@@ -8,10 +8,11 @@ import org.example.plugin.api.Plugin;
 
 public final class PluginLoader {
 
-  private final ServiceLoader<Plugin> loader = ServiceLoader.load(Plugin.class);
+  private final ServiceLoader<Plugin> loader = ServiceLoader.load(Plugin.class, PluginLoader.class.getClassLoader());
 
   public List<Plugin> loadAll() {
     List<Plugin> list = new ArrayList<>();
+    loader.reload();
     loader.iterator().forEachRemaining(list::add);
     return list;
   }

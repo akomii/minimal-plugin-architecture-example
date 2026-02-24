@@ -27,6 +27,7 @@
       <groupId>org.example.plugin</groupId>
       <artifactId>plugin-hello</artifactId>
       <version>${project.parent.version}</version>
+      <scope>runtime</scope>
     </dependency>
   </dependencies>
 
@@ -35,6 +36,16 @@
       <plugin>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-maven-plugin</artifactId>
+        <executions>
+          <execution>
+            <goals>
+              <goal>repackage</goal>
+            </goals>
+          </execution>
+        </executions>
+        <configuration>
+          <includeSystemScope>true</includeSystemScope>
+        </configuration>
       </plugin>
     </plugins>
   </build>
