@@ -10,7 +10,7 @@ public class GoodbyePlugin implements Plugin {
   }
 
   @Override
-  public String execute(String input) {
-    return "Goodbye " + (input == null ? "world" : input) + "!";
+  public Object getController() {
+    return new GoodbyeController();
   }
 }

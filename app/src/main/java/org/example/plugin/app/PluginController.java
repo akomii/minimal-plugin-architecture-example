@@ -9,14 +9,17 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/api/plugins")
 public class PluginController {
 
-  private final PluginLoader loader = new PluginLoader();
+  private final PluginLoader loader;
+
+  public PluginController(PluginLoader loader) {
+    this.loader = loader;
+  }
 
   @PostConstruct
   public void init() {
@@ -42,20 +45,13 @@ public class PluginController {
         .collect(Collectors.toList());
   }
 
-  @GetMapping("/{id}/run")
-  public String run(@PathVariable String id, @RequestParam(required = false) String input) {
-    return loader.getById(id)
-        .map(p -> p.execute(input))
-        .orElse("plugin not active: " + id);
-  }
-
   @PostMapping("/{id}/disable")
   public String disable(@PathVariable String id) {
     try {
       loader.unload(id);
-      return id + " unloaded from memory";
+      return id + " unloaded";
     } catch (Exception e) {
-      return "error unloading plugin";
+      return "error unloading";
     }
   }
 
@@ -63,9 +59,9 @@ public class PluginController {
   public String enable(@PathVariable String id) {
     try {
       loader.reload(id);
-      return id + " loaded into memory";
+      return id + " loaded";
     } catch (Exception e) {
-      return "error loading plugin";
+      return "error loading";
     }
   }
 }

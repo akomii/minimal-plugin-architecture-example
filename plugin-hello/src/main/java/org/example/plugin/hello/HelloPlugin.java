@@ -10,7 +10,7 @@ public class HelloPlugin implements Plugin {
   }
 
   @Override
-  public String execute(String input) {
-    return "Hello " + (input == null ? "world" : input) + "!";
+  public Object getController() {
+    return new HelloController();
   }
 }
