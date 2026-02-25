@@ -5,6 +5,9 @@ import java.io.File;
 import java.util.List;
 import java.util.stream.Collectors;
 import org.example.plugin.api.Plugin;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -40,27 +43,36 @@ public class PluginController {
   }
 
   @GetMapping
-  public List<String> list() {
-    return loader.getActive().stream().map(Plugin::id).collect(Collectors.toList());
+  public ResponseEntity<List<String>> list() {
+    return ResponseEntity.ok(
+        loader.getActive()
+            .stream()
+            .map(Plugin::id)
+            .collect(Collectors.toList())
+    );
   }
 
-  @PostMapping("/{id}/disable")
-  public String disable(@PathVariable String id) {
+  @PostMapping("/{id}")
+  public ResponseEntity<?> enable(@PathVariable String id) {
     try {
-      loader.unload(id);
-      return id + " unloaded";
+      loader.reload(id);
+      return ResponseEntity.status(HttpStatus.CREATED).build();
+    } catch (IllegalArgumentException e) {
+      return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Unknown plugin id");
     } catch (Exception e) {
-      return "error unloading";
+      return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Load failed");
     }
   }
 
-  @PostMapping("/{id}/enable")
-  public String enable(@PathVariable String id) {
+  @DeleteMapping("/{id}")
+  public ResponseEntity<?> disable(@PathVariable String id) {
     try {
-      loader.reload(id);
-      return id + " loaded";
+      loader.unload(id);
+      return ResponseEntity.noContent().build();
+    } catch (IllegalArgumentException e) {
+      return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Plugin not loaded");
     } catch (Exception e) {
-      return "error loading";
+      return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Unload failed");
     }
   }
 }

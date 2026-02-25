@@ -1,7 +1,9 @@
 package org.example.plugin.goodbye;
 
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
@@ -9,7 +11,8 @@ import org.springframework.web.bind.annotation.RestController;
 public class GoodbyeController {
 
   @GetMapping("/goodbye")
-  public String greet(String input) {
-    return "Goodbye " + (input != null ? input : "World");
+  public ResponseEntity<String> greet(@RequestParam(name = "input", required = false) String input) {
+    String result = "Goodbye " + (input != null ? input : "World");
+    return ResponseEntity.ok(result);
   }
 }
