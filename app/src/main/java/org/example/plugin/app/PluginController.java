@@ -78,3 +78,19 @@ public class PluginController {
     }
   }
 }
+
+
+  @GetMapping("/ui/{id}/{file}")
+  public ResponseEntity<Resource> getUi(@PathVariable String id, @PathVariable String file) {
+    ClassLoader cl = loader.getPluginClassLoader(id);
+    if (cl == null) {
+      return ResponseEntity.notFound().build();
+    }
+    Resource resource = new ClassPathResource("ui/" + file, cl);
+    if (!resource.exists()) {
+      return ResponseEntity.notFound().build();
+    }
+    MediaType mediaType = MediaTypeFactory.getMediaType(resource).orElse(MediaType.APPLICATION_OCTET_STREAM);
+    return ResponseEntity.ok().contentType(mediaType).body(resource);
+  }
+}
