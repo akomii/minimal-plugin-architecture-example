@@ -118,11 +118,13 @@ public class PluginLoader {
         beanFactory.destroySingleton(beanName);
       }
       data.classLoader.close();
-      handlerMapping.afterPropertiesSet();
     }
   }
 
   public void reload(String id) throws Exception {
+    if (activePlugins.containsKey(id)) {
+      throw new IllegalStateException("Plugin already loaded: " + id);
+    }
     File jarFile = knownJars.get(id);
     if (jarFile != null) {
       loadJar(jarFile);

@@ -57,6 +57,8 @@ public class PluginController {
     try {
       loader.reload(id);
       return ResponseEntity.status(HttpStatus.CREATED).build();
+    } catch (IllegalStateException e) {
+      return ResponseEntity.status(HttpStatus.CONFLICT).body("Plugin already loaded");
     } catch (IllegalArgumentException e) {
       return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Unknown plugin id");
     } catch (Exception e) {
