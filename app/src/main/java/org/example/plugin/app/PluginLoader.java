@@ -11,6 +11,8 @@ import java.util.Map;
 import java.util.ServiceLoader;
 import java.util.stream.Collectors;
 import org.example.plugin.api.Plugin;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.beans.factory.support.DefaultListableBeanFactory;
 import org.springframework.context.ApplicationContext;
@@ -26,6 +28,8 @@ import org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandl
 
 @Service
 public class PluginLoader {
+
+  private static final Logger log = LoggerFactory.getLogger(PluginLoader.class);
 
   private final Map<String, PluginData> activePlugins = new HashMap<>();
   private final Map<String, File> knownJars = new HashMap<>();
@@ -55,8 +59,7 @@ public class PluginLoader {
       try {
         load(pluginId);
       } catch (Exception e) {
-        System.err.println("Failed to load plugin " + pluginId);
-        e.printStackTrace();
+        log.error("Failed to load plugin {}", pluginId, e);
       }
     }
   }
@@ -71,8 +74,7 @@ public class PluginLoader {
             try {
               discoverJar(file);
             } catch (Exception e) {
-              System.err.println("Failed to scan " + file.getName());
-              e.printStackTrace();
+              log.error("Failed to scan {}", file.getName(), e);
             }
           }
         }
