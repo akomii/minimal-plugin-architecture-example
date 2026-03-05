@@ -59,13 +59,13 @@
                   <groupId>org.example.plugin</groupId>
                   <artifactId>plugin-hello</artifactId>
                   <version>${project.parent.version}</version>
-                  <outputDirectory>${project.basedir}/plugins</outputDirectory>
+                  <outputDirectory>${project.build.directory}/plugins</outputDirectory>
                 </artifactItem>
                 <artifactItem>
                   <groupId>org.example.plugin</groupId>
                   <artifactId>plugin-goodbye</artifactId>
                   <version>${project.parent.version}</version>
-                  <outputDirectory>${project.basedir}/plugins</outputDirectory>
+                  <outputDirectory>${project.build.directory}/plugins</outputDirectory>
                 </artifactItem>
               </artifactItems>
             </configuration>

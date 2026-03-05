@@ -1,5 +1,6 @@
 package org.example.plugin.app;
 
+import jakarta.annotation.PostConstruct;
 import java.io.File;
 import java.lang.reflect.Method;
 import java.net.URL;
@@ -10,6 +11,7 @@ import java.util.Map;
 import java.util.ServiceLoader;
 import java.util.stream.Collectors;
 import org.example.plugin.api.Plugin;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.beans.factory.support.DefaultListableBeanFactory;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ConfigurableApplicationContext;
@@ -30,19 +32,47 @@ public class PluginLoader {
 
   private final ApplicationContext context;
   private final RequestMappingHandlerMapping handlerMapping;
+  private final String pluginDir;
 
-  public PluginLoader(ApplicationContext context, RequestMappingHandlerMapping handlerMapping) {
+  public PluginLoader(ApplicationContext context, RequestMappingHandlerMapping handlerMapping, @Value("${plugin.dir:plugins}") String pluginDir) {
     this.context = context;
     this.handlerMapping = handlerMapping;
+    this.pluginDir = pluginDir;
   }
 
-  private static class PluginData {
+  private record PluginData(Plugin plugin, URLClassLoader classLoader) {
 
-    Plugin plugin;
-    URLClassLoader classLoader;
   }
 
-  public void loadJar(File jarFile) throws Exception {
+  public record PluginInfo(String id, boolean loaded, boolean inFolder) {
+
+  }
+
+  @PostConstruct
+  public void init() {
+    scanForPlugins();
+  }
+
+  private void scanForPlugins() {
+    File dir = new File(pluginDir);
+    if (dir.exists() && dir.isDirectory()) {
+      File[] files = dir.listFiles((d, name) -> name.endsWith(".jar"));
+      if (files != null) {
+        for (File file : files) {
+          if (!knownJars.containsValue(file)) {
+            try {
+              loadJar(file);
+            } catch (Exception e) {
+              System.err.println("Failed to load " + file.getName());
+              e.printStackTrace();
+            }
+          }
+        }
+      }
+    }
+  }
+
+  private void loadJar(File jarFile) throws Exception {
     URLClassLoader classLoader = new URLClassLoader(new URL[]{jarFile.toURI().toURL()}, Plugin.class.getClassLoader());
     ServiceLoader<Plugin> serviceLoader = ServiceLoader.load(Plugin.class, classLoader);
     for (Plugin plugin : serviceLoader) {
@@ -51,9 +81,7 @@ public class PluginLoader {
   }
 
   private void registerPlugin(Plugin plugin, URLClassLoader classLoader, File jarFile) throws Exception {
-    PluginData data = new PluginData();
-    data.plugin = plugin;
-    data.classLoader = classLoader;
+    PluginData data = new PluginData(plugin, classLoader);
     activePlugins.put(plugin.id(), data);
     knownJars.put(plugin.id(), jarFile);
     Object controller = plugin.getController();
@@ -75,17 +103,19 @@ public class PluginLoader {
     if (data == null) {
       return;
     }
-    if (data.plugin.getController() != null) {
+    if (data.plugin().getController() != null) {
       unregisterControllerBean(id);
     }
-    data.classLoader.close();
+    data.classLoader().close();
   }
 
   private void unregisterControllerBean(String pluginId) {
     String beanName = "pluginController_" + pluginId;
     Object controller = context.getBean(beanName);
     List<RequestMappingInfo> toRemove = handlerMapping.getHandlerMethods()
-        .entrySet().stream().filter(e -> beanName.equals(e.getValue().getBean()) || controller.equals(e.getValue().getBean()))
+        .entrySet()
+        .stream()
+        .filter(e -> beanName.equals(e.getValue().getBean()) || controller.equals(e.getValue().getBean()))
         .map(Map.Entry::getKey).toList();
     for (RequestMappingInfo info : toRemove) {
       handlerMapping.unregisterMapping(info);
@@ -98,19 +128,23 @@ public class PluginLoader {
       throw new IllegalStateException("Plugin already loaded: " + id);
     }
     File jarFile = knownJars.get(id);
-    if (jarFile == null) {
+    if (jarFile == null || !jarFile.exists()) {
+      knownJars.remove(id);
       throw new IllegalArgumentException("Unknown plugin id: " + id);
     }
     loadJar(jarFile);
   }
 
-  public List<Plugin> getActive() {
-    return activePlugins.values().stream().map(d -> d.plugin).collect(Collectors.toList());
+  public List<PluginInfo> getPluginStatus() {
+    return knownJars.entrySet()
+        .stream()
+        .map(entry -> new PluginInfo(entry.getKey(), activePlugins.containsKey(entry.getKey()), entry.getValue() != null && entry.getValue().exists()))
+        .collect(Collectors.toList());
   }
 
   public ClassLoader getPluginClassLoader(String id) {
     PluginData data = activePlugins.get(id);
-    return data != null ? data.classLoader : null;
+    return data != null ? data.classLoader() : null;
   }
 
   private DefaultListableBeanFactory getBeanFactory() {

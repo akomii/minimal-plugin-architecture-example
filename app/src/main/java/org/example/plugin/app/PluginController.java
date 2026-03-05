@@ -1,10 +1,7 @@
 package org.example.plugin.app;
 
-import jakarta.annotation.PostConstruct;
-import java.io.File;
 import java.util.List;
-import java.util.stream.Collectors;
-import org.example.plugin.api.Plugin;
+import org.example.plugin.app.PluginLoader.PluginInfo;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.core.io.Resource;
 import org.springframework.http.HttpStatus;
@@ -29,32 +26,9 @@ public class PluginController {
     this.loader = loader;
   }
 
-  @PostConstruct
-  public void init() {
-    File dir = new File("plugins");
-    if (dir.exists() && dir.isDirectory()) {
-      File[] files = dir.listFiles((d, name) -> name.endsWith(".jar"));
-      if (files != null) {
-        for (File file : files) {
-          try {
-            loader.loadJar(file);
-          } catch (Exception e) {
-            System.err.println("Failed to load " + file.getName());
-            e.printStackTrace();
-          }
-        }
-      }
-    }
-  }
-
   @GetMapping
-  public ResponseEntity<List<String>> list() {
-    return ResponseEntity.ok(
-        loader.getActive()
-            .stream()
-            .map(Plugin::id)
-            .collect(Collectors.toList())
-    );
+  public ResponseEntity<List<PluginInfo>> list() {
+    return ResponseEntity.ok(loader.getPluginStatus());
   }
 
   @PostMapping("/{id}")
