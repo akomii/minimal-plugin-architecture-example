@@ -34,7 +34,7 @@ public class PluginController {
   @PostMapping("/{id}")
   public ResponseEntity<Void> enable(@PathVariable String id) {
     try {
-      loader.reload(id);
+      loader.load(id);
       return ResponseEntity.status(HttpStatus.CREATED).build();
     } catch (IllegalStateException e) {
       throw new ResponseStatusException(HttpStatus.CONFLICT, "Plugin already loaded");

@@ -51,9 +51,17 @@ public class PluginLoader {
   @PostConstruct
   public void init() {
     scanForPlugins();
+    for (String pluginId : List.copyOf(knownJars.keySet())) {
+      try {
+        load(pluginId);
+      } catch (Exception e) {
+        System.err.println("Failed to load plugin " + pluginId);
+        e.printStackTrace();
+      }
+    }
   }
 
-  private void scanForPlugins() {
+  public void scanForPlugins() {
     File dir = new File(pluginDir);
     if (dir.exists() && dir.isDirectory()) {
       File[] files = dir.listFiles((d, name) -> name.endsWith(".jar"));
@@ -61,9 +69,9 @@ public class PluginLoader {
         for (File file : files) {
           if (!knownJars.containsValue(file)) {
             try {
-              loadJar(file);
+              discoverJar(file);
             } catch (Exception e) {
-              System.err.println("Failed to load " + file.getName());
+              System.err.println("Failed to scan " + file.getName());
               e.printStackTrace();
             }
           }
@@ -72,18 +80,35 @@ public class PluginLoader {
     }
   }
 
-  private void loadJar(File jarFile) throws Exception {
-    URLClassLoader classLoader = new URLClassLoader(new URL[]{jarFile.toURI().toURL()}, Plugin.class.getClassLoader());
-    ServiceLoader<Plugin> serviceLoader = ServiceLoader.load(Plugin.class, classLoader);
-    for (Plugin plugin : serviceLoader) {
-      registerPlugin(plugin, classLoader, jarFile);
+  private void discoverJar(File jarFile) throws Exception {
+    try (URLClassLoader classLoader = new URLClassLoader(new URL[]{jarFile.toURI().toURL()}, Plugin.class.getClassLoader())) {
+      ServiceLoader<Plugin> serviceLoader = ServiceLoader.load(Plugin.class, classLoader);
+      for (Plugin plugin : serviceLoader) {
+        knownJars.put(plugin.id(), jarFile);
+      }
     }
   }
 
-  private void registerPlugin(Plugin plugin, URLClassLoader classLoader, File jarFile) throws Exception {
+  public void load(String id) throws Exception {
+    if (activePlugins.containsKey(id)) {
+      throw new IllegalStateException("Plugin already loaded: " + id);
+    }
+    File jarFile = knownJars.get(id);
+    if (jarFile == null || !jarFile.exists()) {
+      throw new IllegalArgumentException("Unknown plugin id: " + id);
+    }
+    URLClassLoader classLoader = new URLClassLoader(new URL[]{jarFile.toURI().toURL()}, Plugin.class.getClassLoader());
+    ServiceLoader<Plugin> serviceLoader = ServiceLoader.load(Plugin.class, classLoader);
+    for (Plugin plugin : serviceLoader) {
+      if (plugin.id().equals(id)) {
+        registerPlugin(plugin, classLoader);
+      }
+    }
+  }
+
+  private void registerPlugin(Plugin plugin, URLClassLoader classLoader) throws Exception {
     PluginData data = new PluginData(plugin, classLoader);
     activePlugins.put(plugin.id(), data);
-    knownJars.put(plugin.id(), jarFile);
     Object controller = plugin.getController();
     if (controller != null) {
       registerControllerBean(plugin.id(), controller);
@@ -123,22 +148,13 @@ public class PluginLoader {
     getBeanFactory().destroySingleton(beanName);
   }
 
-  public void reload(String id) throws Exception {
-    if (activePlugins.containsKey(id)) {
-      throw new IllegalStateException("Plugin already loaded: " + id);
-    }
-    File jarFile = knownJars.get(id);
-    if (jarFile == null || !jarFile.exists()) {
-      knownJars.remove(id);
-      throw new IllegalArgumentException("Unknown plugin id: " + id);
-    }
-    loadJar(jarFile);
-  }
-
   public List<PluginInfo> getPluginStatus() {
-    return knownJars.entrySet()
-        .stream()
-        .map(entry -> new PluginInfo(entry.getKey(), activePlugins.containsKey(entry.getKey()), entry.getValue() != null && entry.getValue().exists()))
+    return knownJars.entrySet().stream()
+        .map(entry -> new PluginInfo(
+            entry.getKey(),
+            activePlugins.containsKey(entry.getKey()),
+            entry.getValue() != null && entry.getValue().exists()
+        ))
         .collect(Collectors.toList());
   }
 
