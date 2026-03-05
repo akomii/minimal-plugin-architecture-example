@@ -18,6 +18,10 @@ import org.springframework.web.servlet.handler.AbstractHandlerMethodMapping;
 import org.springframework.web.servlet.mvc.method.RequestMappingInfo;
 import org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerMapping;
 
+// TODO plugins with frontend frameworks
+// TODO versioned plugins
+// TODO plugin with dependencies to other plugins
+
 @Service
 public class PluginLoader {
 
@@ -39,86 +43,54 @@ public class PluginLoader {
   }
 
   public void loadJar(File jarFile) throws Exception {
-    URLClassLoader classLoader = new URLClassLoader(
-        new URL[]{jarFile.toURI().toURL()},
-        Plugin.class.getClassLoader()
-    );
-    registerConfigurationsFromJar(jarFile, classLoader);
+    URLClassLoader classLoader = new URLClassLoader(new URL[]{jarFile.toURI().toURL()}, Plugin.class.getClassLoader());
     ServiceLoader<Plugin> serviceLoader = ServiceLoader.load(Plugin.class, classLoader);
     for (Plugin plugin : serviceLoader) {
-      PluginData data = new PluginData();
-      data.plugin = plugin;
-      data.classLoader = classLoader;
-      activePlugins.put(plugin.id(), data);
-      knownJars.put(plugin.id(), jarFile);
-      Object controller = plugin.getController();
-      if (controller != null) {
-        String beanName = "pluginController_" + plugin.id();
-        ConfigurableApplicationContext configurableContext = (ConfigurableApplicationContext) context;
-        DefaultListableBeanFactory beanFactory = (DefaultListableBeanFactory) configurableContext.getBeanFactory();
-        beanFactory.registerSingleton(beanName, controller);
-        Method detectMethod = AbstractHandlerMethodMapping.class.getDeclaredMethod("detectHandlerMethods", Object.class);
-        detectMethod.setAccessible(true);
-        detectMethod.invoke(handlerMapping, beanName);
-      }
+      registerPlugin(plugin, classLoader, jarFile);
     }
   }
 
-  private void registerConfigurationsFromJar(File jar, URLClassLoader cl) throws Exception {
-    try (java.util.jar.JarFile jf = new java.util.jar.JarFile(jar)) {
-      ConfigurableApplicationContext ctx = (ConfigurableApplicationContext) context;
-      DefaultListableBeanFactory bf = (DefaultListableBeanFactory) ctx.getBeanFactory();
-      var entries = jf.entries();
-      while (entries.hasMoreElements()) {
-        var e = entries.nextElement();
-        if (!e.getName().endsWith(".class")) {
-          continue;
-        }
-        if (e.getName().startsWith("org/springframework")) {
-          continue;
-        }
-        if (e.getName().startsWith("META-INF")) {
-          continue;
-        }
-        String className = e.getName()
-            .replace('/', '.')
-            .replace(".class", "");
-        Class<?> clazz;
-        try {
-          clazz = Class.forName(className, false, cl);
-        } catch (Throwable ex) {
-          continue;
-        }
-        if (clazz.isAnnotationPresent(org.springframework.context.annotation.Configuration.class)) {
-          Object instance = clazz.getDeclaredConstructor().newInstance();
-          String beanName = "pluginConfig_" + clazz.getName();
-          if (!bf.containsSingleton(beanName)) {
-            bf.registerSingleton(beanName, instance);
-          }
-        }
-      }
+  private void registerPlugin(Plugin plugin, URLClassLoader classLoader, File jarFile) throws Exception {
+    PluginData data = new PluginData();
+    data.plugin = plugin;
+    data.classLoader = classLoader;
+    activePlugins.put(plugin.id(), data);
+    knownJars.put(plugin.id(), jarFile);
+    Object controller = plugin.getController();
+    if (controller != null) {
+      registerControllerBean(plugin.id(), controller);
     }
+  }
+
+  private void registerControllerBean(String pluginId, Object controller) throws Exception {
+    String beanName = "pluginController_" + pluginId;
+    getBeanFactory().registerSingleton(beanName, controller);
+    Method detectMethod = AbstractHandlerMethodMapping.class.getDeclaredMethod("detectHandlerMethods", Object.class);
+    detectMethod.setAccessible(true);
+    detectMethod.invoke(handlerMapping, beanName);
   }
 
   public void unload(String id) throws Exception {
     PluginData data = activePlugins.remove(id);
-    if (data != null) {
-      if (data.plugin.getController() != null) {
-        String beanName = "pluginController_" + id;
-        Object controller = context.getBean(beanName);
-        List<RequestMappingInfo> toRemove = handlerMapping.getHandlerMethods().entrySet().stream()
-            .filter(e -> beanName.equals(e.getValue().getBean()) || controller.equals(e.getValue().getBean()))
-            .map(Map.Entry::getKey)
-            .toList();
-        for (RequestMappingInfo info : toRemove) {
-          handlerMapping.unregisterMapping(info);
-        }
-        ConfigurableApplicationContext configurableContext = (ConfigurableApplicationContext) context;
-        DefaultListableBeanFactory beanFactory = (DefaultListableBeanFactory) configurableContext.getBeanFactory();
-        beanFactory.destroySingleton(beanName);
-      }
-      data.classLoader.close();
+    if (data == null) {
+      return;
     }
+    if (data.plugin.getController() != null) {
+      unregisterControllerBean(id);
+    }
+    data.classLoader.close();
+  }
+
+  private void unregisterControllerBean(String pluginId) {
+    String beanName = "pluginController_" + pluginId;
+    Object controller = context.getBean(beanName);
+    List<RequestMappingInfo> toRemove = handlerMapping.getHandlerMethods()
+        .entrySet().stream().filter(e -> beanName.equals(e.getValue().getBean()) || controller.equals(e.getValue().getBean()))
+        .map(Map.Entry::getKey).toList();
+    for (RequestMappingInfo info : toRemove) {
+      handlerMapping.unregisterMapping(info);
+    }
+    getBeanFactory().destroySingleton(beanName);
   }
 
   public void reload(String id) throws Exception {
@@ -126,14 +98,22 @@ public class PluginLoader {
       throw new IllegalStateException("Plugin already loaded: " + id);
     }
     File jarFile = knownJars.get(id);
-    if (jarFile != null) {
-      loadJar(jarFile);
-    } else {
-      throw new RuntimeException("Unknown plugin id: " + id);
+    if (jarFile == null) {
+      throw new IllegalArgumentException("Unknown plugin id: " + id);
     }
+    loadJar(jarFile);
   }
 
   public List<Plugin> getActive() {
     return activePlugins.values().stream().map(d -> d.plugin).collect(Collectors.toList());
+  }
+
+  public ClassLoader getPluginClassLoader(String id) {
+    PluginData data = activePlugins.get(id);
+    return data != null ? data.classLoader : null;
+  }
+
+  private DefaultListableBeanFactory getBeanFactory() {
+    return (DefaultListableBeanFactory) ((ConfigurableApplicationContext) context).getBeanFactory();
   }
 }
