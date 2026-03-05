@@ -5,7 +5,11 @@ import java.io.File;
 import java.util.List;
 import java.util.stream.Collectors;
 import org.example.plugin.api.Plugin;
+import org.springframework.core.io.ClassPathResource;
+import org.springframework.core.io.Resource;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+import org.springframework.http.MediaTypeFactory;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -13,6 +17,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.server.ResponseStatusException;
 
 @RestController
 @RequestMapping("/api/plugins")
@@ -53,42 +58,40 @@ public class PluginController {
   }
 
   @PostMapping("/{id}")
-  public ResponseEntity<?> enable(@PathVariable String id) {
+  public ResponseEntity<Void> enable(@PathVariable String id) {
     try {
       loader.reload(id);
       return ResponseEntity.status(HttpStatus.CREATED).build();
     } catch (IllegalStateException e) {
-      return ResponseEntity.status(HttpStatus.CONFLICT).body("Plugin already loaded");
+      throw new ResponseStatusException(HttpStatus.CONFLICT, "Plugin already loaded");
     } catch (IllegalArgumentException e) {
-      return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Unknown plugin id");
+      throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Unknown plugin id");
     } catch (Exception e) {
-      return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Load failed");
+      throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Load failed");
     }
   }
 
   @DeleteMapping("/{id}")
-  public ResponseEntity<?> disable(@PathVariable String id) {
+  public ResponseEntity<Void> disable(@PathVariable String id) {
     try {
       loader.unload(id);
       return ResponseEntity.noContent().build();
     } catch (IllegalArgumentException e) {
-      return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Plugin not loaded");
+      throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Plugin not loaded");
     } catch (Exception e) {
-      return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Unload failed");
+      throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Unload failed");
     }
   }
-}
-
 
   @GetMapping("/ui/{id}/{file}")
   public ResponseEntity<Resource> getUi(@PathVariable String id, @PathVariable String file) {
     ClassLoader cl = loader.getPluginClassLoader(id);
     if (cl == null) {
-      return ResponseEntity.notFound().build();
+      throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Plugin UI not found");
     }
     Resource resource = new ClassPathResource("ui/" + file, cl);
     if (!resource.exists()) {
-      return ResponseEntity.notFound().build();
+      throw new ResponseStatusException(HttpStatus.NOT_FOUND, "UI resource not found");
     }
     MediaType mediaType = MediaTypeFactory.getMediaType(resource).orElse(MediaType.APPLICATION_OCTET_STREAM);
     return ResponseEntity.ok().contentType(mediaType).body(resource);
