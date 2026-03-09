@@ -33,13 +33,17 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
 
-// TODO plugin with dependencies to other plugins
-// TODO plugin with frontend plugins
-
 @Service
 public class PluginLoader {
 
   private static final Logger log = LoggerFactory.getLogger(PluginLoader.class);
+
+  private static final String META_INF_MAVEN = "META-INF/maven/";
+  private static final String POM_PROPERTIES = "pom.properties";
+  private static final String POM_XML = "pom.xml";
+  private static final String PLUGIN_GROUP_ID = "org.example.plugin";
+  private static final String API_ARTIFACT_ID = "api";
+  private static final String BEAN_PREFIX = "pluginController_";
 
   private final Map<String, PluginData> activePlugins = new HashMap<>();
   private final Map<String, DiscoveredJar> knownJars = new HashMap<>();
@@ -62,7 +66,7 @@ public class PluginLoader {
 
   }
 
-  public record PluginInfoDTO(String id, String version, boolean loaded, boolean inFolder) {
+  public record PluginInfoDTO(String id, String version, boolean loaded, boolean inFolder, List<String> dependencies) {
 
   }
 
@@ -113,7 +117,7 @@ public class PluginLoader {
       Enumeration<JarEntry> entries = jar.entries();
       while (entries.hasMoreElements()) {
         JarEntry entry = entries.nextElement();
-        if (entry.getName().startsWith("META-INF/maven/") && entry.getName().endsWith("pom.properties")) {
+        if (entry.getName().startsWith(META_INF_MAVEN) && entry.getName().endsWith(POM_PROPERTIES)) {
           Properties props = new Properties();
           try (InputStream is = jar.getInputStream(entry)) {
             props.load(is);
@@ -133,7 +137,7 @@ public class PluginLoader {
       Enumeration<JarEntry> entries = jar.entries();
       while (entries.hasMoreElements()) {
         JarEntry entry = entries.nextElement();
-        if (entry.getName().startsWith("META-INF/maven/") && entry.getName().endsWith("pom.xml")) {
+        if (entry.getName().startsWith(META_INF_MAVEN) && entry.getName().endsWith(POM_XML)) {
           try (InputStream is = jar.getInputStream(entry)) {
             DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
             DocumentBuilder builder = factory.newDocumentBuilder();
@@ -143,7 +147,7 @@ public class PluginLoader {
               Element dep = (Element) depNodes.item(i);
               String groupId = dep.getElementsByTagName("groupId").item(0).getTextContent();
               String artifactId = dep.getElementsByTagName("artifactId").item(0).getTextContent();
-              if ("org.example.plugin".equals(groupId) && !"api".equals(artifactId)) {
+              if (PLUGIN_GROUP_ID.equals(groupId) && !API_ARTIFACT_ID.equals(artifactId)) {
                 deps.add(artifactId);
               }
             }
@@ -190,7 +194,7 @@ public class PluginLoader {
   }
 
   private void registerControllerBean(String pluginId, Object controller) throws Exception {
-    String beanName = "pluginController_" + pluginId;
+    String beanName = BEAN_PREFIX + pluginId;
     getBeanFactory().registerSingleton(beanName, controller);
     Method detectMethod = AbstractHandlerMethodMapping.class.getDeclaredMethod("detectHandlerMethods", Object.class);
     detectMethod.setAccessible(true);
@@ -209,7 +213,7 @@ public class PluginLoader {
   }
 
   private void unregisterControllerBean(String pluginId) {
-    String beanName = "pluginController_" + pluginId;
+    String beanName = BEAN_PREFIX + pluginId;
     Object controller = context.getBean(beanName);
     List<RequestMappingInfo> toRemove = handlerMapping.getHandlerMethods()
         .entrySet()
@@ -228,7 +232,8 @@ public class PluginLoader {
             entry.getKey(),
             entry.getValue().version(),
             activePlugins.containsKey(entry.getKey()),
-            entry.getValue().file() != null && entry.getValue().file().exists()
+            entry.getValue().file() != null && entry.getValue().file().exists(),
+            entry.getValue().dependencies()
         ))
         .collect(Collectors.toList());
   }
