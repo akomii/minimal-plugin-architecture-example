@@ -2,23 +2,16 @@ package org.example.plugin.app;
 
 import jakarta.annotation.PostConstruct;
 import java.io.File;
-import java.io.InputStream;
 import java.lang.reflect.Method;
 import java.net.URL;
 import java.net.URLClassLoader;
-import java.util.ArrayList;
-import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Properties;
 import java.util.ServiceLoader;
-import java.util.jar.JarEntry;
-import java.util.jar.JarFile;
 import java.util.stream.Collectors;
-import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
 import org.example.plugin.api.Plugin;
+import org.example.plugin.app.MetadataExtractor.PomInfo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -29,24 +22,15 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.servlet.handler.AbstractHandlerMethodMapping;
 import org.springframework.web.servlet.mvc.method.RequestMappingInfo;
 import org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerMapping;
-import org.w3c.dom.Document;
-import org.w3c.dom.Element;
-import org.w3c.dom.NodeList;
 
 @Service
 public class PluginLoader {
 
-  //TODO outsource pom reading into own class
   //TODO load deps automaticall on startup
   //TODO unload dependend plugins too on unload of parent
 
   private static final Logger log = LoggerFactory.getLogger(PluginLoader.class);
 
-  private static final String META_INF_MAVEN = "META-INF/maven/";
-  private static final String POM_PROPERTIES = "pom.properties";
-  private static final String POM_XML = "pom.xml";
-  private static final String PLUGIN_GROUP_ID = "org.example.plugin";
-  private static final String API_ARTIFACT_ID = "api";
   private static final String BEAN_PREFIX = "pluginController_";
 
   private final Map<String, PluginData> activePlugins = new HashMap<>();
@@ -55,10 +39,16 @@ public class PluginLoader {
   private final ApplicationContext context;
   private final RequestMappingHandlerMapping handlerMapping;
   private final String pluginDir;
+  private final MetadataExtractor extractor;
 
-  public PluginLoader(ApplicationContext context, RequestMappingHandlerMapping handlerMapping, @Value("${plugin.dir:plugins}") String pluginDir) {
+  public PluginLoader(
+      ApplicationContext context,
+      RequestMappingHandlerMapping handlerMapping,
+      MetadataExtractor extractor,
+      @Value("${plugin.dir:plugins}") String pluginDir) {
     this.context = context;
     this.handlerMapping = handlerMapping;
+    this.extractor = extractor;
     this.pluginDir = pluginDir;
   }
 
@@ -67,10 +57,6 @@ public class PluginLoader {
   }
 
   private record DiscoveredJar(File file, String version, List<String> dependencies) {
-
-  }
-
-  private record PomInfo(String artifactId, String version) {
 
   }
 
@@ -112,65 +98,13 @@ public class PluginLoader {
   }
 
   private void discoverJar(File jarFile) {
-    PomInfo pomInfo = extractPomInfo(jarFile);
+    PomInfo pomInfo = extractor.extractPomInfo(jarFile);
     if ("unknown".equals(pomInfo.artifactId())) {
       log.warn("Skipping {}, no valid artifactId found", jarFile.getName());
       return;
     }
-    List<String> dependencies = extractDependencies(jarFile);
+    List<String> dependencies = extractor.extractDependencies(jarFile);
     knownJars.put(pomInfo.artifactId(), new DiscoveredJar(jarFile, pomInfo.version(), dependencies));
-  }
-
-  private PomInfo extractPomInfo(File jarFile) {
-    try (JarFile jar = new JarFile(jarFile)) {
-      Enumeration<JarEntry> entries = jar.entries();
-      while (entries.hasMoreElements()) {
-        JarEntry entry = entries.nextElement();
-        if (entry.getName().startsWith(META_INF_MAVEN) && entry.getName().endsWith(POM_PROPERTIES)) {
-          Properties props = new Properties();
-          try (InputStream is = jar.getInputStream(entry)) {
-            props.load(is);
-            return new PomInfo(
-                props.getProperty("artifactId", "unknown"),
-                props.getProperty("version", "unknown")
-            );
-          }
-        }
-      }
-    } catch (Exception e) {
-      log.warn("Could not extract pom properties from {}", jarFile.getName(), e);
-    }
-    return new PomInfo("unknown", "unknown");
-  }
-
-  private List<String> extractDependencies(File jarFile) {
-    List<String> deps = new ArrayList<>();
-    try (JarFile jar = new JarFile(jarFile)) {
-      Enumeration<JarEntry> entries = jar.entries();
-      while (entries.hasMoreElements()) {
-        JarEntry entry = entries.nextElement();
-        if (entry.getName().startsWith(META_INF_MAVEN) && entry.getName().endsWith(POM_XML)) {
-          try (InputStream is = jar.getInputStream(entry)) {
-            DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
-            DocumentBuilder builder = factory.newDocumentBuilder();
-            Document doc = builder.parse(is);
-            NodeList depNodes = doc.getElementsByTagName("dependency");
-            for (int i = 0; i < depNodes.getLength(); i++) {
-              Element dep = (Element) depNodes.item(i);
-              String groupId = dep.getElementsByTagName("groupId").item(0).getTextContent();
-              String artifactId = dep.getElementsByTagName("artifactId").item(0).getTextContent();
-              if (PLUGIN_GROUP_ID.equals(groupId) && !API_ARTIFACT_ID.equals(artifactId)) {
-                deps.add(artifactId);
-              }
-            }
-            return deps;
-          }
-        }
-      }
-    } catch (Exception e) {
-      log.warn("Could not extract dependencies from {}", jarFile.getName(), e);
-    }
-    return deps;
   }
 
   public void load(String id) throws Exception {
