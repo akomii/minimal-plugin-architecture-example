@@ -6,6 +6,7 @@ import java.io.InputStream;
 import java.lang.reflect.Method;
 import java.net.URL;
 import java.net.URLClassLoader;
+import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.List;
@@ -15,6 +16,8 @@ import java.util.ServiceLoader;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 import java.util.stream.Collectors;
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
 import org.example.plugin.api.Plugin;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -26,8 +29,12 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.servlet.handler.AbstractHandlerMethodMapping;
 import org.springframework.web.servlet.mvc.method.RequestMappingInfo;
 import org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerMapping;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.NodeList;
 
 // TODO plugin with dependencies to other plugins
+// TODO plugin with frontend plugins
 
 @Service
 public class PluginLoader {
@@ -51,7 +58,7 @@ public class PluginLoader {
 
   }
 
-  private record DiscoveredJar(File file, String version) {
+  private record DiscoveredJar(File file, String version, List<String> dependencies) {
 
   }
 
@@ -95,7 +102,8 @@ public class PluginLoader {
       ServiceLoader<Plugin> serviceLoader = ServiceLoader.load(Plugin.class, classLoader);
       for (Plugin plugin : serviceLoader) {
         String version = extractJarVersion(jarFile);
-        knownJars.put(plugin.id(), new DiscoveredJar(jarFile, version));
+        List<String> dependencies = extractDependencies(jarFile);
+        knownJars.put(plugin.id(), new DiscoveredJar(jarFile, version, dependencies));
       }
     }
   }
@@ -119,6 +127,36 @@ public class PluginLoader {
     return "unknown";
   }
 
+  private List<String> extractDependencies(File jarFile) {
+    List<String> deps = new ArrayList<>();
+    try (JarFile jar = new JarFile(jarFile)) {
+      Enumeration<JarEntry> entries = jar.entries();
+      while (entries.hasMoreElements()) {
+        JarEntry entry = entries.nextElement();
+        if (entry.getName().startsWith("META-INF/maven/") && entry.getName().endsWith("pom.xml")) {
+          try (InputStream is = jar.getInputStream(entry)) {
+            DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+            DocumentBuilder builder = factory.newDocumentBuilder();
+            Document doc = builder.parse(is);
+            NodeList depNodes = doc.getElementsByTagName("dependency");
+            for (int i = 0; i < depNodes.getLength(); i++) {
+              Element dep = (Element) depNodes.item(i);
+              String groupId = dep.getElementsByTagName("groupId").item(0).getTextContent();
+              String artifactId = dep.getElementsByTagName("artifactId").item(0).getTextContent();
+              if ("org.example.plugin".equals(groupId) && !"api".equals(artifactId)) {
+                deps.add(artifactId);
+              }
+            }
+            return deps;
+          }
+        }
+      }
+    } catch (Exception e) {
+      log.warn("Could not extract dependencies from {}", jarFile.getName(), e);
+    }
+    return deps;
+  }
+
   public void load(String id) throws Exception {
     if (activePlugins.containsKey(id)) {
       throw new IllegalStateException("Plugin already loaded: " + id);
@@ -126,6 +164,11 @@ public class PluginLoader {
     DiscoveredJar discoveredJar = knownJars.get(id);
     if (discoveredJar == null || !discoveredJar.file().exists()) {
       throw new IllegalArgumentException("Unknown plugin id: " + id);
+    }
+    for (String dep : discoveredJar.dependencies()) {
+      if (!activePlugins.containsKey(dep)) {
+        throw new RuntimeException("Dependency not loaded: " + dep);
+      }
     }
     File jarFile = discoveredJar.file();
     URLClassLoader classLoader = new URLClassLoader(new URL[]{jarFile.toURI().toURL()}, Plugin.class.getClassLoader());
