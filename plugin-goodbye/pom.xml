@@ -32,7 +32,7 @@
         <directory>src/main/resources</directory>
       </resource>
       <resource>
-        <directory>target/ui-build</directory>
+        <directory>src/main/webapp/dist</directory>
         <targetPath>ui</targetPath>
       </resource>
     </resources>
@@ -71,6 +71,7 @@
             <goals>
               <goal>npm</goal>
             </goals>
+            <phase>generate-resources</phase>
             <configuration>
               <arguments>run build</arguments>
             </configuration>
