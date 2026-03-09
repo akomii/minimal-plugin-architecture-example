@@ -36,6 +36,10 @@ import org.w3c.dom.NodeList;
 @Service
 public class PluginLoader {
 
+  //TODO outsource pom reading into own class
+  //TODO load deps automaticall on startup
+  //TODO unload dependend plugins too on unload of parent
+
   private static final Logger log = LoggerFactory.getLogger(PluginLoader.class);
 
   private static final String META_INF_MAVEN = "META-INF/maven/";
@@ -66,6 +70,10 @@ public class PluginLoader {
 
   }
 
+  private record PomInfo(String artifactId, String version) {
+
+  }
+
   public record PluginInfoDTO(String id, String version, boolean loaded, boolean inFolder, List<String> dependencies) {
 
   }
@@ -74,10 +82,12 @@ public class PluginLoader {
   public void init() {
     scanForPlugins();
     for (String pluginId : List.copyOf(knownJars.keySet())) {
-      try {
-        load(pluginId);
-      } catch (Exception e) {
-        log.error("Failed to load plugin {}", pluginId, e);
+      if (!activePlugins.containsKey(pluginId)) {
+        try {
+          load(pluginId);
+        } catch (Exception e) {
+          log.error("Failed to load plugin {}", pluginId, e);
+        }
       }
     }
   }
@@ -101,18 +111,17 @@ public class PluginLoader {
     }
   }
 
-  private void discoverJar(File jarFile) throws Exception {
-    try (URLClassLoader classLoader = new URLClassLoader(new URL[]{jarFile.toURI().toURL()}, Plugin.class.getClassLoader())) {
-      ServiceLoader<Plugin> serviceLoader = ServiceLoader.load(Plugin.class, classLoader);
-      for (Plugin plugin : serviceLoader) {
-        String version = extractJarVersion(jarFile);
-        List<String> dependencies = extractDependencies(jarFile);
-        knownJars.put(plugin.id(), new DiscoveredJar(jarFile, version, dependencies));
-      }
+  private void discoverJar(File jarFile) {
+    PomInfo pomInfo = extractPomInfo(jarFile);
+    if ("unknown".equals(pomInfo.artifactId())) {
+      log.warn("Skipping {}, no valid artifactId found", jarFile.getName());
+      return;
     }
+    List<String> dependencies = extractDependencies(jarFile);
+    knownJars.put(pomInfo.artifactId(), new DiscoveredJar(jarFile, pomInfo.version(), dependencies));
   }
 
-  private String extractJarVersion(File jarFile) {
+  private PomInfo extractPomInfo(File jarFile) {
     try (JarFile jar = new JarFile(jarFile)) {
       Enumeration<JarEntry> entries = jar.entries();
       while (entries.hasMoreElements()) {
@@ -121,14 +130,17 @@ public class PluginLoader {
           Properties props = new Properties();
           try (InputStream is = jar.getInputStream(entry)) {
             props.load(is);
-            return props.getProperty("version", "unknown");
+            return new PomInfo(
+                props.getProperty("artifactId", "unknown"),
+                props.getProperty("version", "unknown")
+            );
           }
         }
       }
     } catch (Exception e) {
-      log.warn("Could not extract version from {}", jarFile.getName(), e);
+      log.warn("Could not extract pom properties from {}", jarFile.getName(), e);
     }
-    return "unknown";
+    return new PomInfo("unknown", "unknown");
   }
 
   private List<String> extractDependencies(File jarFile) {
@@ -171,25 +183,24 @@ public class PluginLoader {
     }
     for (String dep : discoveredJar.dependencies()) {
       if (!activePlugins.containsKey(dep)) {
-        throw new RuntimeException("Dependency not loaded: " + dep);
+        load(dep);
       }
     }
     File jarFile = discoveredJar.file();
     URLClassLoader classLoader = new URLClassLoader(new URL[]{jarFile.toURI().toURL()}, Plugin.class.getClassLoader());
     ServiceLoader<Plugin> serviceLoader = ServiceLoader.load(Plugin.class, classLoader);
     for (Plugin plugin : serviceLoader) {
-      if (plugin.id().equals(id)) {
-        registerPlugin(plugin, classLoader);
-      }
+      registerPlugin(id, plugin, classLoader);
+      break;
     }
   }
 
-  private void registerPlugin(Plugin plugin, URLClassLoader classLoader) throws Exception {
+  private void registerPlugin(String id, Plugin plugin, URLClassLoader classLoader) throws Exception {
     PluginData data = new PluginData(plugin, classLoader);
-    activePlugins.put(plugin.id(), data);
+    activePlugins.put(id, data);
     Object controller = plugin.getController();
     if (controller != null) {
-      registerControllerBean(plugin.id(), controller);
+      registerControllerBean(id, controller);
     }
   }
 
