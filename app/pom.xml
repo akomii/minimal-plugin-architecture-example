@@ -67,6 +67,12 @@
                   <version>${project.parent.version}</version>
                   <outputDirectory>${project.build.directory}/plugins</outputDirectory>
                 </artifactItem>
+                <artifactItem>
+                  <groupId>org.example.plugin</groupId>
+                  <artifactId>plugin-welcome</artifactId>
+                  <version>${project.parent.version}</version>
+                  <outputDirectory>${project.build.directory}/plugins</outputDirectory>
+                </artifactItem>
               </artifactItems>
             </configuration>
           </execution>
