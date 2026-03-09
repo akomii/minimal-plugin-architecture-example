@@ -42,6 +42,11 @@ public class PluginController {
       throw new ResponseStatusException(HttpStatus.CONFLICT, "Plugin already loaded");
     } catch (IllegalArgumentException e) {
       throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Unknown plugin id");
+    } catch (RuntimeException e) {
+      if (e.getMessage() != null && e.getMessage().startsWith("Dependency not loaded:")) {
+        throw new ResponseStatusException(HttpStatus.FAILED_DEPENDENCY, e.getMessage());
+      }
+      throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Load failed");
     } catch (Exception e) {
       throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Load failed");
     }
