@@ -1,5 +1,6 @@
 package org.example.plugin.app;
 
+import jakarta.servlet.http.HttpServletRequest;
 import java.util.List;
 import org.example.plugin.app.PluginLoader.PluginInfo;
 import org.springframework.core.io.ClassPathResource;
@@ -15,6 +16,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
+import org.springframework.web.servlet.HandlerMapping;
 
 @RestController
 @RequestMapping("/api/plugins")
@@ -57,8 +59,11 @@ public class PluginController {
     }
   }
 
-  @GetMapping("/ui/{id}/{file}")
-  public ResponseEntity<Resource> getUi(@PathVariable String id, @PathVariable String file) {
+  @GetMapping("/ui/{id}/**")
+  public ResponseEntity<Resource> getUi(@PathVariable String id, HttpServletRequest request) {
+    String path = (String) request.getAttribute(HandlerMapping.PATH_WITHIN_HANDLER_MAPPING_ATTRIBUTE);
+    String prefix = "/api/plugins/ui/" + id + "/";
+    String file = path.substring(path.indexOf(prefix) + prefix.length());
     ClassLoader cl = loader.getPluginClassLoader(id);
     if (cl == null) {
       throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Plugin UI not found");
