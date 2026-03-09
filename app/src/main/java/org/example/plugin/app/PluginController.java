@@ -2,7 +2,7 @@ package org.example.plugin.app;
 
 import jakarta.servlet.http.HttpServletRequest;
 import java.util.List;
-import org.example.plugin.app.PluginLoader.PluginInfo;
+import org.example.plugin.app.PluginLoader.PluginInfoDTO;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.core.io.Resource;
 import org.springframework.http.HttpStatus;
@@ -29,7 +29,7 @@ public class PluginController {
   }
 
   @GetMapping
-  public ResponseEntity<List<PluginInfo>> list() {
+  public ResponseEntity<List<PluginInfoDTO>> list() {
     return ResponseEntity.ok(loader.getPluginStatus());
   }
 

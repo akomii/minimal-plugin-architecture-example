@@ -2,13 +2,18 @@ package org.example.plugin.app;
 
 import jakarta.annotation.PostConstruct;
 import java.io.File;
+import java.io.InputStream;
 import java.lang.reflect.Method;
 import java.net.URL;
 import java.net.URLClassLoader;
+import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 import java.util.ServiceLoader;
+import java.util.jar.JarEntry;
+import java.util.jar.JarFile;
 import java.util.stream.Collectors;
 import org.example.plugin.api.Plugin;
 import org.slf4j.Logger;
@@ -22,8 +27,6 @@ import org.springframework.web.servlet.handler.AbstractHandlerMethodMapping;
 import org.springframework.web.servlet.mvc.method.RequestMappingInfo;
 import org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerMapping;
 
-// TODO plugins with frontend frameworks
-// TODO versioned plugins
 // TODO plugin with dependencies to other plugins
 
 @Service
@@ -32,7 +35,7 @@ public class PluginLoader {
   private static final Logger log = LoggerFactory.getLogger(PluginLoader.class);
 
   private final Map<String, PluginData> activePlugins = new HashMap<>();
-  private final Map<String, File> knownJars = new HashMap<>();
+  private final Map<String, DiscoveredJar> knownJars = new HashMap<>();
 
   private final ApplicationContext context;
   private final RequestMappingHandlerMapping handlerMapping;
@@ -48,7 +51,11 @@ public class PluginLoader {
 
   }
 
-  public record PluginInfo(String id, boolean loaded, boolean inFolder) {
+  private record DiscoveredJar(File file, String version) {
+
+  }
+
+  public record PluginInfoDTO(String id, String version, boolean loaded, boolean inFolder) {
 
   }
 
@@ -70,7 +77,8 @@ public class PluginLoader {
       File[] files = dir.listFiles((d, name) -> name.endsWith(".jar"));
       if (files != null) {
         for (File file : files) {
-          if (!knownJars.containsValue(file)) {
+          boolean alreadyKnown = knownJars.values().stream().anyMatch(dj -> dj.file().equals(file));
+          if (!alreadyKnown) {
             try {
               discoverJar(file);
             } catch (Exception e) {
@@ -86,19 +94,40 @@ public class PluginLoader {
     try (URLClassLoader classLoader = new URLClassLoader(new URL[]{jarFile.toURI().toURL()}, Plugin.class.getClassLoader())) {
       ServiceLoader<Plugin> serviceLoader = ServiceLoader.load(Plugin.class, classLoader);
       for (Plugin plugin : serviceLoader) {
-        knownJars.put(plugin.id(), jarFile);
+        String version = extractJarVersion(jarFile);
+        knownJars.put(plugin.id(), new DiscoveredJar(jarFile, version));
       }
     }
+  }
+
+  private String extractJarVersion(File jarFile) {
+    try (JarFile jar = new JarFile(jarFile)) {
+      Enumeration<JarEntry> entries = jar.entries();
+      while (entries.hasMoreElements()) {
+        JarEntry entry = entries.nextElement();
+        if (entry.getName().startsWith("META-INF/maven/") && entry.getName().endsWith("pom.properties")) {
+          Properties props = new Properties();
+          try (InputStream is = jar.getInputStream(entry)) {
+            props.load(is);
+            return props.getProperty("version", "unknown");
+          }
+        }
+      }
+    } catch (Exception e) {
+      log.warn("Could not extract version from {}", jarFile.getName(), e);
+    }
+    return "unknown";
   }
 
   public void load(String id) throws Exception {
     if (activePlugins.containsKey(id)) {
       throw new IllegalStateException("Plugin already loaded: " + id);
     }
-    File jarFile = knownJars.get(id);
-    if (jarFile == null || !jarFile.exists()) {
+    DiscoveredJar discoveredJar = knownJars.get(id);
+    if (discoveredJar == null || !discoveredJar.file().exists()) {
       throw new IllegalArgumentException("Unknown plugin id: " + id);
     }
+    File jarFile = discoveredJar.file();
     URLClassLoader classLoader = new URLClassLoader(new URL[]{jarFile.toURI().toURL()}, Plugin.class.getClassLoader());
     ServiceLoader<Plugin> serviceLoader = ServiceLoader.load(Plugin.class, classLoader);
     for (Plugin plugin : serviceLoader) {
@@ -150,12 +179,13 @@ public class PluginLoader {
     getBeanFactory().destroySingleton(beanName);
   }
 
-  public List<PluginInfo> getPluginStatus() {
+  public List<PluginInfoDTO> getPluginStatus() {
     return knownJars.entrySet().stream()
-        .map(entry -> new PluginInfo(
+        .map(entry -> new PluginInfoDTO(
             entry.getKey(),
+            entry.getValue().version(),
             activePlugins.containsKey(entry.getKey()),
-            entry.getValue() != null && entry.getValue().exists()
+            entry.getValue().file() != null && entry.getValue().file().exists()
         ))
         .collect(Collectors.toList());
   }
