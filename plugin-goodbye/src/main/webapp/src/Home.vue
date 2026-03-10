@@ -6,8 +6,7 @@
         <h1 class="text-900 text-3xl font-medium mb-3">Home Page</h1>
       </div>
       <div class="flex flex-column gap-3">
-        <label for="name" class="block text-900 font-medium">Name</label>
-        <InputText id="name" v-model="name" placeholder="Enter your name" class="w-full mb-3"/>
+        <InputText v-model="name" placeholder="Name" class="w-full mb-3"/>
         <Button label="Send to Backend" icon="pi pi-send" @click="callBackend" class="w-full"/>
         <Message v-if="message" severity="success" :closable="false">{{ message }}</Message>
         <router-link to="/about" class="font-medium no-underline text-blue-500 hover:text-blue-700 cursor-pointer">
