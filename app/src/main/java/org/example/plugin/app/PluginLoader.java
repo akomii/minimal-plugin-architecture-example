@@ -5,6 +5,7 @@ import java.io.File;
 import java.lang.reflect.Method;
 import java.net.URL;
 import java.net.URLClassLoader;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -25,9 +26,6 @@ import org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandl
 
 @Service
 public class PluginLoader {
-
-  //TODO load deps automaticall on startup
-  //TODO unload dependend plugins too on unload of parent
 
   private static final Logger log = LoggerFactory.getLogger(PluginLoader.class);
 
@@ -147,6 +145,16 @@ public class PluginLoader {
   }
 
   public void unload(String id) throws Exception {
+    List<String> dependents = new ArrayList<>();
+    for (String activeId : activePlugins.keySet()) {
+      DiscoveredJar jar = knownJars.get(activeId);
+      if (jar != null && jar.dependencies().contains(id)) {
+        dependents.add(activeId);
+      }
+    }
+    for (String dependentId : dependents) {
+      unload(dependentId);
+    }
     PluginData data = activePlugins.remove(id);
     if (data == null) {
       return;
