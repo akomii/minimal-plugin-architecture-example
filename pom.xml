@@ -20,6 +20,7 @@
     <module>plugin-hello</module>
     <module>plugin-goodbye</module>
     <module>plugin-welcome</module>
+    <module>plugin-aloha</module>
     <module>app</module>
   </modules>
 
