@@ -32,7 +32,7 @@ const getApiBase = () => {
 }
 
 const callBackend = async () => {
-  const r = await fetch(`${getApiBase()}/welcome?name=${encodeURIComponent(name.value)}`)
+  const r = await fetch(`${getApiBase()}/welcome?input=${encodeURIComponent(name.value)}`)
   message.value = await r.text()
 }
 
