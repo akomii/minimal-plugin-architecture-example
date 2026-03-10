@@ -19,6 +19,10 @@ export default defineConfig(({command}) => {
             target: "http://localhost:8080",
             changeOrigin: true,
             rewrite: (path) => path.replace(/^\/goodbye/, '/api/plugins/goodbye')
+          },
+          "/api/plugins": {
+            target: "http://localhost:8080",
+            changeOrigin: true
           }
         }
       }

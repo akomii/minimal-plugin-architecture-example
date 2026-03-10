@@ -9,27 +9,38 @@
         <InputText v-model="name" placeholder="Name" class="w-full mb-3"/>
         <Button label="Send to Backend" icon="pi pi-send" @click="callBackend" class="w-full"/>
         <Message v-if="message" severity="success" :closable="false">{{ message }}</Message>
+        <Button @click="goBack" label="Back" icon="pi pi-arrow-left" class="p-button-outlined w-full"/>
       </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import {ref} from "vue"
+import {onMounted, ref} from "vue"
 import InputText from "primevue/inputtext"
 import Button from "primevue/button"
 import Message from "primevue/message"
 
 const name = ref("")
 const message = ref("")
+const goodbyeUrl = ref("")
+
+const getApiBase = () => {
+  let base = window.location.pathname.replace(/\/ui\/.*$/, "")
+  if (base.endsWith("/")) base = base.slice(0, -1)
+  return base || "/api/plugins"
+}
 
 const callBackend = async () => {
-  let apiBase = window.location.pathname.replace(/\/ui\/.*$/, "")
-  if (apiBase.endsWith("/")) {
-    apiBase = apiBase.slice(0, -1)
-  }
-
-  const r = await fetch(`${apiBase}/welcome?input=${encodeURIComponent(name.value)}`)
+  const r = await fetch(`${getApiBase()}/welcome?name=${encodeURIComponent(name.value)}`)
   message.value = await r.text()
 }
+
+const goBack = () => {
+  window.location.href = goodbyeUrl.value
+}
+
+onMounted(() => {
+  goodbyeUrl.value = `${getApiBase()}/ui/plugin-goodbye/index.html`
+})
 </script>
