@@ -38,8 +38,8 @@ public class PluginLoader {
 
   private final ApplicationContext context;
   private final RequestMappingHandlerMapping handlerMapping;
-  private final String pluginDir;
   private final MetadataExtractor extractor;
+  private final String pluginDir;
 
   public PluginLoader(
       ApplicationContext context,
@@ -52,11 +52,11 @@ public class PluginLoader {
     this.pluginDir = pluginDir;
   }
 
-  private record PluginData(Plugin plugin, URLClassLoader classLoader) {
+  private record DiscoveredJar(File file, String version, List<String> dependencies) {
 
   }
 
-  private record DiscoveredJar(File file, String version, List<String> dependencies) {
+  private record PluginData(Plugin plugin, URLClassLoader classLoader) {
 
   }
 
