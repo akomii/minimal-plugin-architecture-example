@@ -83,4 +83,12 @@ public class MetadataExtractor {
     }
     return deps;
   }
+
+  public boolean isPluginJar(File jarFile) {
+    try (JarFile jar = new JarFile(jarFile)) {
+      return jar.getJarEntry("META-INF/services/org.example.plugin.api.Plugin") != null;
+    } catch (Exception e) {
+      return false;
+    }
+  }
 }

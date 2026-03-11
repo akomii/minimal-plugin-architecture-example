@@ -32,7 +32,7 @@ public class PluginLoader {
   private static final String BEAN_PREFIX = "pluginController_";
 
   private final Map<String, PluginData> activePlugins = new HashMap<>();
-  private final Map<String, DiscoveredJar> knownJars = new HashMap<>();
+  private final Map<String, DiscoveredPluginJar> knownJars = new HashMap<>();
 
   private final ApplicationContext context;
   private final RequestMappingHandlerMapping handlerMapping;
@@ -50,7 +50,7 @@ public class PluginLoader {
     this.pluginDir = pluginDir;
   }
 
-  private record DiscoveredJar(File file, String version, List<String> dependencies) {
+  private record DiscoveredPluginJar(File file, String version, List<String> dependencies) {
 
   }
 
@@ -85,7 +85,7 @@ public class PluginLoader {
           boolean alreadyKnown = knownJars.values().stream().anyMatch(dj -> dj.file().equals(file));
           if (!alreadyKnown) {
             try {
-              discoverJar(file);
+              discoverPluginJar(file);
             } catch (Exception e) {
               log.error("Failed to scan {}", file.getName(), e);
             }
@@ -95,21 +95,24 @@ public class PluginLoader {
     }
   }
 
-  private void discoverJar(File jarFile) {
+  private void discoverPluginJar(File jarFile) {
+    if (!extractor.isPluginJar(jarFile)) {
+      return;
+    }
     PomInfo pomInfo = extractor.extractPomInfo(jarFile);
     if ("unknown".equals(pomInfo.artifactId())) {
       log.warn("Skipping {}, no valid artifactId found", jarFile.getName());
       return;
     }
     List<String> dependencies = extractor.extractDependencies(jarFile);
-    knownJars.put(pomInfo.artifactId(), new DiscoveredJar(jarFile, pomInfo.version(), dependencies));
+    knownJars.put(pomInfo.artifactId(), new DiscoveredPluginJar(jarFile, pomInfo.version(), dependencies));
   }
 
   public void load(String id) throws Exception {
     if (activePlugins.containsKey(id)) {
       throw new IllegalStateException("Plugin already loaded: " + id);
     }
-    DiscoveredJar discoveredJar = knownJars.get(id);
+    DiscoveredPluginJar discoveredJar = knownJars.get(id);
     if (discoveredJar == null || !discoveredJar.file().exists()) {
       throw new IllegalArgumentException("Unknown plugin id: " + id);
     }
@@ -147,7 +150,7 @@ public class PluginLoader {
   public void unload(String id) throws Exception {
     List<String> dependents = new ArrayList<>();
     for (String activeId : activePlugins.keySet()) {
-      DiscoveredJar jar = knownJars.get(activeId);
+      DiscoveredPluginJar jar = knownJars.get(activeId);
       if (jar != null && jar.dependencies().contains(id)) {
         dependents.add(activeId);
       }
