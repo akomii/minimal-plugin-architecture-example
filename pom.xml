@@ -13,6 +13,7 @@
     <maven.compiler.source>${java.version}</maven.compiler.source>
     <maven.compiler.target>${java.version}</maven.compiler.target>
     <spring-boot.version>3.0.6</spring-boot.version>
+    <auto-service.version>1.1.1</auto-service.version>
   </properties>
 
   <modules>
@@ -26,6 +27,7 @@
 
   <dependencyManagement>
     <dependencies>
+      <!-- Imports the Spring Boot BOM to manage and align dependency versions across the project without a parent POM -->
       <dependency>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-dependencies</artifactId>
@@ -36,6 +38,16 @@
     </dependencies>
   </dependencyManagement>
 
+  <dependencies>
+    <!-- Processes the @AutoService annotation at compile time to automatically generate the META-INF/services file for the Java ServiceLoader -->
+    <dependency>
+      <groupId>com.google.auto.service</groupId>
+      <artifactId>auto-service-annotations</artifactId>
+      <version>${auto-service.version}</version>
+      <scope>provided</scope>
+    </dependency>
+  </dependencies>
+
   <build>
     <pluginManagement>
       <plugins>
@@ -45,6 +57,13 @@
           <version>3.11.0</version>
           <configuration>
             <release>${java.version}</release>
+            <annotationProcessorPaths>
+              <path>
+                <groupId>com.google.auto.service</groupId>
+                <artifactId>auto-service</artifactId>
+                <version>${auto-service.version}</version>
+              </path>
+            </annotationProcessorPaths>
           </configuration>
         </plugin>
       </plugins>
