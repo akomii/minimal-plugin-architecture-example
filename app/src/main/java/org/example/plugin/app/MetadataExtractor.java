@@ -3,13 +3,12 @@ package org.example.plugin.app;
 import java.io.File;
 import java.io.InputStream;
 import java.util.ArrayList;
-import java.util.Enumeration;
 import java.util.List;
 import java.util.Properties;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
-import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
+import org.example.plugin.api.Plugin;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
@@ -23,8 +22,7 @@ public class MetadataExtractor {
   private static final Logger log = LoggerFactory.getLogger(MetadataExtractor.class);
 
   private static final String META_INF_MAVEN = "META-INF/maven/";
-  private static final String POM_PROPERTIES = "pom.properties";
-  private static final String POM_XML = "pom.xml";
+  private static final String META_INF_SERVICES = "META-INF/services/";
   private static final String PLUGIN_GROUP_ID = "org.example.plugin";
   private static final String API_ARTIFACT_ID = "api";
 
@@ -34,18 +32,15 @@ public class MetadataExtractor {
 
   public PomInfo extractPomInfo(File jarFile) {
     try (JarFile jar = new JarFile(jarFile)) {
-      Enumeration<JarEntry> entries = jar.entries();
-      while (entries.hasMoreElements()) {
-        JarEntry entry = entries.nextElement();
-        if (entry.getName().startsWith(META_INF_MAVEN) && entry.getName().endsWith(POM_PROPERTIES)) {
-          Properties props = new Properties();
-          try (InputStream is = jar.getInputStream(entry)) {
-            props.load(is);
-            return new PomInfo(
-                props.getProperty("artifactId", "unknown"),
-                props.getProperty("version", "unknown")
-            );
-          }
+      JarEntry entry = findEntry(jar, "pom.properties");
+      if (entry != null) {
+        Properties props = new Properties();
+        try (InputStream is = jar.getInputStream(entry)) {
+          props.load(is);
+          return new PomInfo(
+              props.getProperty("artifactId", "unknown"),
+              props.getProperty("version", "unknown")
+          );
         }
       }
     } catch (Exception e) {
@@ -57,24 +52,18 @@ public class MetadataExtractor {
   public List<String> extractDependencies(File jarFile) {
     List<String> deps = new ArrayList<>();
     try (JarFile jar = new JarFile(jarFile)) {
-      Enumeration<JarEntry> entries = jar.entries();
-      while (entries.hasMoreElements()) {
-        JarEntry entry = entries.nextElement();
-        if (entry.getName().startsWith(META_INF_MAVEN) && entry.getName().endsWith(POM_XML)) {
-          try (InputStream is = jar.getInputStream(entry)) {
-            DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
-            DocumentBuilder builder = factory.newDocumentBuilder();
-            Document doc = builder.parse(is);
-            NodeList depNodes = doc.getElementsByTagName("dependency");
-            for (int i = 0; i < depNodes.getLength(); i++) {
-              Element dep = (Element) depNodes.item(i);
-              String groupId = dep.getElementsByTagName("groupId").item(0).getTextContent();
-              String artifactId = dep.getElementsByTagName("artifactId").item(0).getTextContent();
-              if (PLUGIN_GROUP_ID.equals(groupId) && !API_ARTIFACT_ID.equals(artifactId)) {
-                deps.add(artifactId);
-              }
+      JarEntry entry = findEntry(jar, "pom.xml");
+      if (entry != null) {
+        try (InputStream is = jar.getInputStream(entry)) {
+          Document doc = DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(is);
+          NodeList depNodes = doc.getElementsByTagName("dependency");
+          for (int i = 0; i < depNodes.getLength(); i++) {
+            Element dep = (Element) depNodes.item(i);
+            String groupId = dep.getElementsByTagName("groupId").item(0).getTextContent();
+            String artifactId = dep.getElementsByTagName("artifactId").item(0).getTextContent();
+            if (PLUGIN_GROUP_ID.equals(groupId) && !API_ARTIFACT_ID.equals(artifactId)) {
+              deps.add(artifactId);
             }
-            return deps;
           }
         }
       }
@@ -84,9 +73,17 @@ public class MetadataExtractor {
     return deps;
   }
 
+  private JarEntry findEntry(JarFile jar, String suffix) {
+    return jar.stream()
+        .filter(e -> e.getName().startsWith(META_INF_MAVEN) && e.getName().endsWith(suffix))
+        .findFirst()
+        .orElse(null);
+  }
+
   public boolean isPluginJar(File jarFile) {
     try (JarFile jar = new JarFile(jarFile)) {
-      return jar.getJarEntry("META-INF/services/org.example.plugin.api.Plugin") != null;
+      String serviceFile = META_INF_SERVICES + Plugin.class.getName();
+      return jar.getJarEntry(serviceFile) != null;
     } catch (Exception e) {
       return false;
     }
