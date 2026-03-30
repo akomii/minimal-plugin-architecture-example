@@ -9,7 +9,7 @@
         <InputText v-model="name" placeholder="Name" class="w-full mb-3"/>
         <Button label="Send to Backend" icon="pi pi-send" @click="callBackend" class="w-full"/>
         <Message v-if="message" severity="success" :closable="false">{{ message }}</Message>
-        <Button @click="goBack" label="Back" icon="pi pi-arrow-left" class="p-button-outlined w-full"/>
+        <Button @click="goBack" label="Back to Plugin Two" icon="pi pi-arrow-left" class="p-button-outlined w-full"/>
       </div>
     </div>
   </div>
