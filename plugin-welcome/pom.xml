@@ -21,7 +21,7 @@
     </dependency>
     <dependency>
       <groupId>org.example.plugin</groupId>
-      <artifactId>plugin-goodbye</artifactId>
+      <artifactId>plugin-two</artifactId>
       <version>${project.parent.version}</version>
     </dependency>
     <dependency>

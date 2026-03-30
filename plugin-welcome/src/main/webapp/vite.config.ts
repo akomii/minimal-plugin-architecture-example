@@ -15,10 +15,9 @@ export default defineConfig(({command}) => {
     ...(isDev && {
       server: {
         proxy: {
-          "/welcome": {
+          "/api/plugins": {
             target: "http://localhost:8080",
-            changeOrigin: true,
-            rewrite: (path) => path.replace(/^\/welcome/, '/api/plugins/welcome')
+            changeOrigin: true
           }
         }
       }

@@ -19,7 +19,7 @@
   <modules>
     <module>api</module>
     <module>plugin-one</module>
-    <module>plugin-goodbye</module>
+    <module>plugin-two</module>
     <module>plugin-welcome</module>
     <module>plugin-aloha</module>
     <module>app</module>
