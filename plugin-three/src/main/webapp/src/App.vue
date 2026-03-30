@@ -32,7 +32,7 @@ const getApiBase = () => {
 }
 
 const callBackend = async () => {
-  const r = await fetch(`${getApiBase()}/welcome?input=${encodeURIComponent(name.value)}`)
+  const r = await fetch(`${getApiBase()}/three?input=${encodeURIComponent(name.value)}`)
   message.value = await r.text()
 }
 
@@ -41,6 +41,6 @@ const goBack = () => {
 }
 
 onMounted(() => {
-  goodbyeUrl.value = `${getApiBase()}/ui/plugin-goodbye/index.html`
+  goodbyeUrl.value = `${getApiBase()}/ui/plugin-two/index.html`
 })
 </script>
