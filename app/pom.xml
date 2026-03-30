@@ -57,25 +57,25 @@
               <artifactItems>
                 <artifactItem>
                   <groupId>org.example.plugin</groupId>
-                  <artifactId>plugin-hello</artifactId>
+                  <artifactId>plugin-one</artifactId>
                   <version>${project.parent.version}</version>
                   <outputDirectory>${project.build.directory}/plugins</outputDirectory>
                 </artifactItem>
                 <artifactItem>
                   <groupId>org.example.plugin</groupId>
-                  <artifactId>plugin-goodbye</artifactId>
+                  <artifactId>plugin-two</artifactId>
                   <version>${project.parent.version}</version>
                   <outputDirectory>${project.build.directory}/plugins</outputDirectory>
                 </artifactItem>
                 <artifactItem>
                   <groupId>org.example.plugin</groupId>
-                  <artifactId>plugin-welcome</artifactId>
+                  <artifactId>plugin-three</artifactId>
                   <version>${project.parent.version}</version>
                   <outputDirectory>${project.build.directory}/plugins</outputDirectory>
                 </artifactItem>
                 <artifactItem>
                   <groupId>org.example.plugin</groupId>
-                  <artifactId>plugin-aloha</artifactId>
+                  <artifactId>plugin-four</artifactId>
                   <version>${project.parent.version}</version>
                   <outputDirectory>${project.build.directory}/plugins</outputDirectory>
                 </artifactItem>
