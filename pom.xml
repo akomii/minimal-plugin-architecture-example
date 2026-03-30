@@ -18,7 +18,7 @@
 
   <modules>
     <module>api</module>
-    <module>plugin-hello</module>
+    <module>plugin-one</module>
     <module>plugin-goodbye</module>
     <module>plugin-welcome</module>
     <module>plugin-aloha</module>

@@ -1,13 +1,13 @@
-package org.example.plugin.hello;
+package org.example.plugin.one;
 
 import com.google.auto.service.AutoService;
 import org.example.plugin.api.Plugin;
 
 @AutoService(Plugin.class)
-public class HelloPlugin implements Plugin {
+public class OnePlugin implements Plugin {
 
   @Override
   public Object getController() {
-    return new HelloController();
+    return new OneController();
   }
 }
