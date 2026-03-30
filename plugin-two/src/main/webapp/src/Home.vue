@@ -52,7 +52,7 @@ onMounted(async () => {
       const welcome = plugins.find((p: any) => p.id === "plugin-three")
       if (welcome && welcome.loaded) {
         isWelcomeLoaded.value = true
-        welcomeUrl.value = `${apiBase}/ui/plugin-welcome/index.html`
+        welcomeUrl.value = `${apiBase}/ui/plugin-three/index.html`
       }
     }
   } catch (e) {
