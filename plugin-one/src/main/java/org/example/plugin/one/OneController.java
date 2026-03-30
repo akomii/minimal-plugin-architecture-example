@@ -12,7 +12,7 @@ public class OneController {
 
   @GetMapping("/one")
   public ResponseEntity<String> greet(@RequestParam(name = "input", required = false) String input) {
-    String result = "1 Hello for " + (input != null ? input : "World");
+    String result = "One Hello for " + (input != null ? input : "World");
     return ResponseEntity.ok(result);
   }
 }

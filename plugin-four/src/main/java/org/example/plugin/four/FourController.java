@@ -12,7 +12,7 @@ public class FourController {
 
   @GetMapping("/four")
   public ResponseEntity<String> greet(@RequestParam(name = "input", required = false) String input) {
-    String result = "4 Hello's for " + (input != null ? input : "World");
+    String result = "Four Hello's for " + (input != null ? input : "World");
     return ResponseEntity.ok(result);
   }
 }
