@@ -12,7 +12,7 @@ public class TwoController {
 
   @GetMapping("/two")
   public ResponseEntity<String> greet(@RequestParam(name = "input", required = false) String input) {
-    String result = "Hello " + (input != null ? input : "World");
+    String result = "Two Hello's for " + (input != null ? input : "World");
     return ResponseEntity.ok(result);
   }
 }

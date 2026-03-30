@@ -11,7 +11,7 @@
   </parent>
 
   <groupId>org.example.plugin</groupId>
-  <artifactId>plugin-welcome</artifactId>
+  <artifactId>plugin-three</artifactId>
 
   <dependencies>
     <dependency>
