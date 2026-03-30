@@ -24,7 +24,12 @@ export default defineConfig(({command}) => {
     }),
     build: {
       outDir: resolve(__dirname, "dist"),
-      emptyOutDir: true
+      emptyOutDir: true,
+      rollupOptions: {
+        external: [
+          '/api/plugins/ui/plugin-three/plugin-three.js'
+        ]
+      }
     }
   }
 })
