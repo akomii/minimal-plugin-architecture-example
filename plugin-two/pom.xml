@@ -38,7 +38,7 @@
       </resource>
       <resource>
         <directory>src/main/webapp/dist</directory>
-        <targetPath>static/ui/plugin-two</targetPath>
+        <targetPath>ui</targetPath>
       </resource>
     </resources>
     <plugins>
