@@ -1,30 +1,25 @@
-import {defineConfig} from "vite"
-import vue from "@vitejs/plugin-vue"
-import {dirname, resolve} from "path"
-import {fileURLToPath} from "url"
+import { defineConfig } from 'vite'
+import vue from '@vitejs/plugin-vue'
+import { resolve } from 'path'
 
-const __filename = fileURLToPath(import.meta.url)
-const __dirname = dirname(__filename)
-
-export default defineConfig(({command}) => {
-  const isDev = command === "serve"
-
-  return {
-    plugins: [vue()],
-    base: "./",
-    ...(isDev && {
-      server: {
-        proxy: {
-          "/api/plugins": {
-            target: "http://localhost:8080",
-            changeOrigin: true
-          }
+export default defineConfig({
+  plugins: [vue()],
+  build: {
+    lib: {
+      entry: resolve(__dirname, 'src/index.ts'),
+      name: 'PluginThree',
+      formats: ['es'],
+      fileName: () => 'plugin-three.js'
+    },
+    outDir: 'dist',
+    emptyOutDir: true,
+    rollupOptions: {
+      external: ['vue'],
+      output: {
+        globals: {
+          vue: 'Vue'
         }
       }
-    }),
-    build: {
-      outDir: resolve(__dirname, "dist"),
-      emptyOutDir: true
     }
   }
 })
