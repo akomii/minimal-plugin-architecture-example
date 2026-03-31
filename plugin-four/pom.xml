@@ -33,7 +33,7 @@
       </resource>
       <resource>
         <directory>src/main/webapp/dist</directory>
-        <targetPath>ui</targetPath>
+        <targetPath>static/ui/plugin-four</targetPath>
       </resource>
     </resources>
     <plugins>
