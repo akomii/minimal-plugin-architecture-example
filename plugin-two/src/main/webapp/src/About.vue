@@ -1,10 +1,21 @@
 <template>
-  <div class="flex align-items-center justify-content-center min-h-screen surface-ground">
-    <div class="surface-card p-5 shadow-4 border-round w-full md:w-6 lg:w-4 text-center">
+  <div
+    class="flex align-items-center justify-content-center min-h-screen surface-ground"
+  >
+    <div
+      class="surface-card p-5 shadow-4 border-round w-full md:w-6 lg:w-4 text-center"
+    >
       <i class="pi pi-info-circle text-5xl text-primary mb-3"></i>
       <h1 class="text-900 text-3xl font-medium mb-3">About Page</h1>
-      <router-link to="/" class="font-medium no-underline text-blue-500 hover:text-blue-700 cursor-pointer">
-        <Button label="Back" icon="pi pi-arrow-left" class="p-button-outlined w-full"/>
+      <router-link
+        to="/"
+        class="font-medium no-underline text-blue-500 hover:text-blue-700 cursor-pointer"
+      >
+        <Button
+          label="Back"
+          icon="pi pi-arrow-left"
+          class="p-button-outlined w-full"
+        />
       </router-link>
     </div>
   </div>

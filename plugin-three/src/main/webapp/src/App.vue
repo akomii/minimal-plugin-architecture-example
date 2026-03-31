@@ -7,15 +7,22 @@
     </div>
 
     <div class="flex flex-column gap-3 mt-4">
-      <InputText v-model="name" placeholder="Enter your name" class="w-full"/>
-      <Button label="Send to Backend" icon="pi pi-send" @click="callBackend" class="w-full"/>
-      <Message v-if="message" severity="success" :closable="false">{{ message }}</Message>
+      <InputText v-model="name" placeholder="Enter your name" class="w-full" />
+      <Button
+        label="Send to Backend"
+        icon="pi pi-send"
+        @click="callBackend"
+        class="w-full"
+      />
+      <Message v-if="message" severity="success" :closable="false">{{
+        message
+      }}</Message>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import {ref} from "vue"
+import { ref } from "vue"
 import InputText from "primevue/inputtext"
 import Button from "primevue/button"
 import Message from "primevue/message"
@@ -30,7 +37,9 @@ const getApiBase = () => {
 }
 
 const callBackend = async () => {
-  const r = await fetch(`${getApiBase()}/two?input=${encodeURIComponent(name.value)}`)
+  const r = await fetch(
+    `${getApiBase()}/two?input=${encodeURIComponent(name.value)}`
+  )
   message.value = await r.text()
 }
 </script>
