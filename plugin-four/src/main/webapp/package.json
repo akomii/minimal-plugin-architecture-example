@@ -1,25 +1,26 @@
 {
-  "name": "welcome-frontend",
+  "name": "plugin-two",
   "private": true,
   "version": "1.0.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vue-tsc --noEmit && vite build"
+    "build": "vue-tsc && vite build",
+    "format": "prettier --write \"src/**/*.{ts,vue,html,css,json}\""
   },
   "dependencies": {
     "@primevue/themes": "^4.0.0",
     "primeflex": "^3.3.1",
     "primeicons": "^7.0.0",
     "primevue": "^4.0.0",
-    "vue": "^3.4.0",
-    "vue-router": "^5.0.3"
+    "vue": "^3.4.21",
+    "vue-router": "^4.0.0"
   },
   "devDependencies": {
-    "@types/node": "^25.3.5",
-    "@vitejs/plugin-vue": "^5.0.0",
-    "typescript": "^5.9.3",
-    "vite": "^5.0.0",
-    "vue-tsc": "^3.2.5"
+    "@vitejs/plugin-vue": "^5.0.4",
+    "prettier": "^3.8.1",
+    "typescript": "^5.2.2",
+    "vite": "^5.2.0",
+    "vue-tsc": "^2.0.6"
   }
 }

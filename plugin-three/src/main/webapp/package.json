@@ -9,7 +9,7 @@
     "format": "prettier --write \"src/**/*.{ts,vue,html,css,json}\""
   },
   "dependencies": {
-    "primevue": "^3.50.0",
+    "primevue": "^4.0.0",
     "vue": "^3.4.21"
   },
   "devDependencies": {
