@@ -12,25 +12,19 @@
         <router-link to="/about" class="font-medium no-underline text-blue-500 hover:text-blue-700 cursor-pointer">
           <Button label="Go to About" icon="pi pi-arrow-right" iconPos="right" class="p-button-outlined w-full"/>
         </router-link>
-
-        <a v-if="isWelcomeLoaded" :href="welcomeUrl" class="font-medium no-underline text-blue-500 hover:text-blue-700 cursor-pointer">
-          <Button label="Open Plugin Three" icon="pi pi-external-link" class="p-button-secondary w-full"/>
-        </a>
       </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import {onMounted, ref} from "vue"
+import {ref} from "vue"
 import InputText from "primevue/inputtext"
 import Button from "primevue/button"
 import Message from "primevue/message"
 
 const name = ref("")
 const message = ref("")
-const isWelcomeLoaded = ref(false)
-const welcomeUrl = ref("")
 
 const getApiBase = () => {
   let base = window.location.pathname.replace(/\/ui\/.*$/, "")
@@ -42,21 +36,4 @@ const callBackend = async () => {
   const r = await fetch(`${getApiBase()}/two?input=${encodeURIComponent(name.value)}`)
   message.value = await r.text()
 }
-
-onMounted(async () => {
-  try {
-    const apiBase = getApiBase()
-    const r = await fetch(apiBase)
-    if (r.ok) {
-      const plugins = await r.json()
-      const welcome = plugins.find((p: any) => p.id === "plugin-three")
-      if (welcome && welcome.loaded) {
-        isWelcomeLoaded.value = true
-        welcomeUrl.value = `${apiBase}/ui/plugin-three/index.html`
-      }
-    }
-  } catch (e) {
-    console.error("Failed to fetch plugins", e)
-  }
-})
 </script>
