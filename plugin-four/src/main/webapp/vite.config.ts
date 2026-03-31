@@ -18,6 +18,10 @@ export default defineConfig(({command}) => {
           "/api/plugins": {
             target: "http://localhost:8080",
             changeOrigin: true
+          },
+          "/ui": {
+            target: "http://localhost:8080",
+            changeOrigin: true
           }
         }
       }
