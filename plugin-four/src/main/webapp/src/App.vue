@@ -5,7 +5,6 @@
         <div class="text-xl font-bold">Plugin Four</div>
         <div class="text-sm text-600">Frontend plugin host demo</div>
       </div>
-
       <div class="flex gap-2">
         <RouterLink to="/plugins" class="no-underline">
           <Button label="Plugins" severity="secondary"/>
@@ -15,7 +14,6 @@
         </RouterLink>
       </div>
     </div>
-
     <main class="p-4">
       <RouterView/>
     </main>
