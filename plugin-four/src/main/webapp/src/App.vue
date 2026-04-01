@@ -3,7 +3,7 @@
     <div class="surface-section shadow-2 px-4 py-3 flex align-items-center justify-content-between">
       <div>
         <div class="text-xl font-bold">Plugin Four</div>
-        <div class="text-sm text-600">Frontend plugin host demo</div>
+        <div class="text-sm text-600">Active plugins are dynamically imported ES modules mounted at runtime</div>
       </div>
       <div class="flex gap-2">
         <RouterLink to="/plugins" class="no-underline">
