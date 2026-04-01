@@ -12,14 +12,6 @@ export default defineConfig({
       fileName: () => "plugin-three.js"
     },
     outDir: "dist",
-    emptyOutDir: true,
-    rollupOptions: {
-      external: ["vue"],
-      output: {
-        globals: {
-          vue: "Vue"
-        }
-      }
-    }
+    emptyOutDir: true
   }
 })
