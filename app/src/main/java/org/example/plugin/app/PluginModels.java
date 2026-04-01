@@ -19,4 +19,8 @@ public class PluginModels {
   public record PluginInfoDTO(String id, String version, boolean loaded, boolean inFolder, List<String> dependencies) {
 
   }
+
+  public record FrontendPluginDTO(String id, String url) {
+
+  }
 }

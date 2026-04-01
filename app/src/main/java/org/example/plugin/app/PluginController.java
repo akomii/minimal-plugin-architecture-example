@@ -2,6 +2,7 @@ package org.example.plugin.app;
 
 import jakarta.servlet.http.HttpServletRequest;
 import java.util.List;
+import org.example.plugin.app.PluginModels.FrontendPluginDTO;
 import org.example.plugin.app.PluginModels.PluginInfoDTO;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.core.io.Resource;
@@ -23,14 +24,21 @@ import org.springframework.web.servlet.HandlerMapping;
 public class PluginController {
 
   private final PluginLoader loader;
+  private final JsLibraryPluginService libraryService;
 
-  public PluginController(PluginLoader loader) {
+  public PluginController(PluginLoader loader, JsLibraryPluginService frontendPluginLibraryService) {
     this.loader = loader;
+    this.libraryService = frontendPluginLibraryService;
   }
 
   @GetMapping
-  public ResponseEntity<List<PluginInfoDTO>> list() {
+  public ResponseEntity<List<PluginInfoDTO>> listPlugins() {
     return ResponseEntity.ok(loader.getPluginStatus());
+  }
+
+  @GetMapping("/frontend")
+  public ResponseEntity<List<FrontendPluginDTO>> listFrontendPlugins() {
+    return ResponseEntity.ok(libraryService.listFrontendLibraries());
   }
 
   @PostMapping("/{id}")
