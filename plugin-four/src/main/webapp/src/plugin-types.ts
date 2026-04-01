@@ -16,10 +16,12 @@ export interface FrontendPluginDefinition {
   component: Component
 }
 
+export interface FrontendPluginModuleMeta {
+  id?: string
+}
+
 export interface FrontendPluginModule {
   default?: Component | FrontendPluginDefinition
   component?: Component
-  meta?: {
-    id?: string
-  }
+  meta?: FrontendPluginModuleMeta
 }
