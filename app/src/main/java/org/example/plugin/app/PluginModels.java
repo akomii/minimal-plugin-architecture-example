@@ -1,11 +1,13 @@
 package org.example.plugin.app;
 
-
 import java.io.File;
 import java.net.URLClassLoader;
 import java.util.List;
 import org.example.plugin.api.Plugin;
 
+/**
+ * Data structures and records used across the plugin architecture
+ */
 public class PluginModels {
 
   public record DiscoveredPluginJar(String id, File file, String version, List<String> dependencies) {

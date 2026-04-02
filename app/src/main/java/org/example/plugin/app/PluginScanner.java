@@ -11,6 +11,9 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
+/**
+ * Scans the configured local directory for plugin JAR files. Compares found files against already known jars to identify new plugins ready for loading.
+ */
 @Component
 public class PluginScanner {
 

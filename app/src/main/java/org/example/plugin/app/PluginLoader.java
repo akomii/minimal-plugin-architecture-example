@@ -18,6 +18,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
+/**
+ * Core engine responsible for the plugin lifecycle. Creates isolated URLClassLoaders for each JAR and uses the Java ServiceLoader to instantiate plugin classes.
+ */
 @Service
 public class PluginLoader {
 

@@ -11,6 +11,9 @@ import org.springframework.web.servlet.handler.AbstractHandlerMethodMapping;
 import org.springframework.web.servlet.mvc.method.RequestMappingInfo;
 import org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerMapping;
 
+/**
+ * Integrates dynamically loaded plugin controllers into the active Spring context. Triggers Spring handler mappings so new REST endpoints become immediately routable at runtime.
+ */
 @Component
 public class PluginRegistrar {
 

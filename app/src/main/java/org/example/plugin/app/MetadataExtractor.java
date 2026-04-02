@@ -16,6 +16,9 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
 
+/**
+ * Extracts internal metadata from discovered plugin JAR files. Reads pom properties and dependencies to verify the JAR is a valid plugin before the system attempts to load it.
+ */
 @Component
 public class MetadataExtractor {
 

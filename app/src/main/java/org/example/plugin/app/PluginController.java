@@ -19,6 +19,9 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.servlet.HandlerMapping;
 
+/**
+ * REST API exposing plugin management operations to the frontend. Provides endpoints to list available plugins, toggle their active state, and serve their static UI resources.
+ */
 @RestController
 @RequestMapping("/api/plugins")
 public class PluginController {

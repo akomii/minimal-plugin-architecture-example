@@ -8,6 +8,9 @@ import org.springframework.core.io.ClassPathResource;
 import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Service;
 
+/**
+ * Bridges backend plugin loading with frontend dynamic imports. Detects if active plugins contain compiled JavaScript libraries and provides the URL paths to the UI host.
+ */
 @Service
 public class JsLibraryPluginService {
 
