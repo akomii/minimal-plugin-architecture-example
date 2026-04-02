@@ -7,6 +7,10 @@ import {EsModuleFrontendPluginLoader} from "../services/frontend-plugin-loader"
 import {HttpFrontendPluginManifestRepository} from "../services/frontend-plugin-manifest-repository"
 import {LocalStoragePluginActivationStorage} from "../services/plugin-activation-storage"
 
+/**
+ * Central state management for the UI host
+ * Coordinates fetching manifests, loading remote modules, and tracking active components
+ */
 export interface PluginStore {
   availablePlugins: Readonly<typeof availablePlugins>
   activePluginIds: Readonly<typeof activePluginIds>

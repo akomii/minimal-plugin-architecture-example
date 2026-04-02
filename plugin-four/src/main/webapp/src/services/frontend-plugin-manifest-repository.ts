@@ -1,5 +1,9 @@
 import type {FrontendPluginManifest} from "../plugin-types"
 
+/**
+ * API client for plugin discovery
+ * Calls the host backend to retrieve the list of available frontend plugin URLs
+ */
 export interface FrontendPluginManifestRepository {
   fetchAll(): Promise<FrontendPluginManifest[]>
 }

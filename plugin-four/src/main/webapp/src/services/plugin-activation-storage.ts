@@ -1,3 +1,7 @@
+/**
+ * Local storage persistence layer
+ * Saves and loads the user's active plugin selections across browser sessions
+ */
 export interface PluginActivationStorage {
   load(): string[]
   save(pluginIds: string[]): void

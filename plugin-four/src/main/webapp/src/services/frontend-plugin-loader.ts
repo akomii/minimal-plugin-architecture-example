@@ -1,5 +1,9 @@
 import type {FrontendPluginDefinition, FrontendPluginManifest, FrontendPluginModule, LoadedFrontendPlugin} from "../plugin-types"
 
+/**
+ * Dynamic module loader
+ * Fetches compiled ES modules via URL and normalizes their exports into valid Vue components
+ */
 export interface FrontendPluginLoader {
   load(manifest: FrontendPluginManifest): Promise<LoadedFrontendPlugin>
 }
